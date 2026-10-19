@@ -16,7 +16,7 @@ set -e
 # there is nothing to rebuild, and the commit stays fast.
 staged=$(git diff --cached --name-only)
 case "$staged" in
-  *web/*|*ui.py*|*icon.png*|*index.html*|*build_standalone.py*) ;;
+  *web/*|*docs/*|*ui.py*|*index.html*|*build_standalone.py*) ;;
   *) exit 0 ;;
 esac
 

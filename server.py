@@ -63,23 +63,38 @@ class LocalHTTPServer(ThreadingHTTPServer):
         super().server_bind()
 
 
-# Explicit allowlist: the server never resolves a client-supplied path.
-# The flag says whether the file carries {{...}} placeholders for ui.py
-# to fill in on the way out.
-STATIC = {
-    "/": (WEB / "index.html", "text/html; charset=utf-8", True),
-    "/index.html": (WEB / "index.html", "text/html; charset=utf-8", True),
-    "/style.css": (WEB / "style.css", "text/css; charset=utf-8", True),
-    "/app.js": (WEB / "app.js", "text/javascript; charset=utf-8", True),
-    "/icon.png": (HERE / "icon.png", "image/png", False),
-}
+def build_static() -> dict:
+    """The routes the server will answer, and the file behind each one.
 
-# Every tool icon, from the one list in ui.py, so adding a tool there is all
-# it takes for its image to be served here as well.
-STATIC.update({
-    route: (WEB / "images" / name, "image/png", False)
-    for route, name in ui.IMAGES.items()
-})
+    An explicit allowlist, built by looking at the folders rather than by being
+    listed out here -- so a new tool script or a new sprite needs no edit -- but
+    still fixed before any request arrives, so a client-supplied path is never
+    resolved against the filesystem.
+
+    The flag says whether the file carries {{...}} placeholders for ui.py to
+    fill in on the way out.
+    """
+    routes = {
+        "/": (WEB / "index.html", "text/html; charset=utf-8", True),
+        "/index.html": (WEB / "index.html", "text/html; charset=utf-8", True),
+        "/style.css": (WEB / "style.css", "text/css; charset=utf-8", True),
+        "/app.js": (WEB / "app.js", "text/javascript; charset=utf-8", True),
+    }
+    # The tools, which the page loads after app.js -- that order is what lets
+    # each one register itself.
+    routes.update({
+        "/tools/" + name: (WEB / "tools" / name, "text/javascript; charset=utf-8", True)
+        for name in ui.tool_scripts()
+    })
+    # Every sprite and sound, from docs/.
+    routes.update({
+        route: (path, ui.ASSET_TYPES[path.suffix.lower()], False)
+        for route, path in ui.assets().items()
+    })
+    return routes
+
+
+STATIC = build_static()
 
 _ui_lock = threading.Lock()
 _ui_stamp: tuple[int, int] | None = None
@@ -130,12 +145,15 @@ def rebuild_standalone() -> None:
 
 
 def reload_sources() -> None:
-    """Pick up edits to the solvers and the shared copy without a fresh process."""
+    """Pick up edits to the solvers and the shared copy without a fresh process,
+    including a tool script or a sprite that was not there when this started."""
     importlib.reload(solvers)
     solvers.reload()
-    global _ui_stamp
+    global _ui_stamp, STATIC
     with _ui_lock:
         _ui_stamp = None
+    importlib.reload(ui)
+    STATIC = build_static()
 
 
 def render_ui(text: str, where: str) -> str:

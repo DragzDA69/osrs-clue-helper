@@ -2,9 +2,13 @@
 """Build index.html -- a single self-contained page with no server.
 
 Takes web/index.html -- the same page server.py serves -- and inlines what it
-would otherwise fetch: style.css, app.js, every tool script, and each image as
-a data URI. The result is one file that runs offline in any browser: open it
-from the Files app on iOS, or let GitHub Pages serve it.
+would otherwise fetch: style.css, app.js, every tool script, and every sprite
+and sound the page refers to, each as a data URI straight from docs/. The
+result is one file that runs offline in any browser: open it from the Files app
+on iOS, or let GitHub Pages serve it.
+
+Only the assets the page actually names are carried, so an unused sprite sitting
+in docs/ costs the page nothing.
 
 Building from the served page rather than a second template is deliberate: the
 two used to be separate documents, and they drifted.
@@ -14,6 +18,7 @@ two used to be separate documents, and they drifted.
 
 import argparse
 import base64
+import re
 import sys
 from pathlib import Path
 
@@ -22,12 +27,12 @@ sys.path.insert(0, str(HERE))
 
 import ui  # noqa: E402
 
+ASSET_SUFFIXES = tuple(ui.ASSET_TYPES)
+
 TEMPLATE = HERE / "web" / "index.html"
 STYLES = HERE / "web" / "style.css"
 APP = HERE / "web" / "app.js"
 TOOLS_DIR = HERE / "web" / "tools"
-IMAGES = HERE / "web" / "images"
-ICON = HERE / "icon.png"
 OUT = HERE / "index.html"
 
 # The served page's own tags are what gets swapped out, so there are no
@@ -35,7 +40,6 @@ OUT = HERE / "index.html"
 # web/index.html is opened directly.
 STYLESHEET_TAG = '<link rel="stylesheet" href="/style.css">'
 SCRIPT_TAG = '<script src="/app.js"></script>'
-ICON_URL = "/icon.png"
 DOCTYPE = "<!doctype html>"
 
 # Stamped at the top of the output. A generated file sitting in the repo root
@@ -46,7 +50,7 @@ BANNER = """<!--
 
   Built by build_standalone.py from:
       web/index.html   markup        web/tools/*.js   the tools
-      web/style.css    styles        web/images/*     icons
+      web/style.css    styles        docs/*           sprites and sounds
       ui.py            every label, tool and timing
 
   Edit those, then run:  python build_standalone.py
@@ -59,14 +63,31 @@ def fail(message: str):
 
 
 def data_uri(path: Path) -> str:
-    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode("ascii")
+    """One asset, inlined. The media type comes from ui.py's own table, so the
+    page and the server agree on what a file is."""
+    media = ui.ASSET_TYPES[path.suffix.lower()]
+    return "data:{};base64,{}".format(
+        media, base64.b64encode(path.read_bytes()).decode("ascii"))
 
 
 def tool_scripts() -> list[tuple[str, str]]:
-    """Every web/tools/*.js, in name order so a build is reproducible."""
-    if not TOOLS_DIR.is_dir():
-        return []
-    return [(p.name, p.read_text(encoding="utf-8")) for p in sorted(TOOLS_DIR.glob("*.js"))]
+    """Every web/tools/*.js, in the same order ui.py lists them for the served
+    page, so the two load the tools alike."""
+    return [(name, (TOOLS_DIR / name).read_text(encoding="utf-8"))
+            for name in ui.tool_scripts()]
+
+
+# A path that looks like an asset: how the page writes one, so a typo in a
+# filename is caught here rather than showing up as a broken image later.
+ASSET_REFERENCE = re.compile(
+    r"/(?:images|audio)/[\w()./-]+?(?:" +
+    "|".join(suffix.replace(".", r"\.") for suffix in ASSET_SUFFIXES) + ")")
+
+
+def check_assets(page: str) -> list[str]:
+    """Asset URLs the page asks for that nothing under docs/ answers."""
+    known = ui.assets()
+    return sorted({ref for ref in ASSET_REFERENCE.findall(page) if ref not in known})
 
 
 def _build(argv=None) -> None:
@@ -75,7 +96,7 @@ def _build(argv=None) -> None:
     args = ap.parse_args(argv)
 
     page = TEMPLATE.read_text(encoding="utf-8")
-    for tag in (STYLESHEET_TAG, SCRIPT_TAG, ICON_URL, DOCTYPE):
+    for tag in (STYLESHEET_TAG, SCRIPT_TAG, DOCTYPE):
         if tag not in page:
             fail("Could not rebuild the page: {} is missing {}.".format(TEMPLATE.name, tag))
 
@@ -102,24 +123,31 @@ def _build(argv=None) -> None:
         if "</script" in text.lower():
             fail("Could not rebuild the page: {} contains invalid script closing text.".format(name))
 
-    # Images: the icon the page links to, then every tool icon ui.py names.
-    # Each is replaced everywhere it appears, so a path written in the markup
-    # and the same path inside the rendered tool list both resolve offline.
-    try:
-        icon = data_uri(ICON)
-        pictures = {route: data_uri(IMAGES / name) for route, name in ui.IMAGES.items()}
-    except FileNotFoundError as exc:
-        fail("Could not rebuild the page: an image is missing.\nDetails: {}".format(exc))
-
     # A tool registers itself on load, so its script must come after app.js.
     scripts = "<script>" + app + "</script>" + "".join(
         "<script>" + text + "</script>" for _, text in tools)
 
     page = page.replace(STYLESHEET_TAG, "<style>" + styles + "</style>", 1)
     page = page.replace(SCRIPT_TAG, scripts, 1)
-    page = page.replace(ICON_URL, icon)     # favicon, home icon, apple touch icon
-    for route, uri in pictures.items():
-        page = page.replace(route, uri)
+    # The served page fetches the tools over the network; this one already
+    # carries them, so those tags come straight back out.
+    tags = ui.tool_script_tags()
+    if tags:
+        page = page.replace(tags, "", 1)
+
+    # Assets last, and only the ones the page names: the markup's icon, the
+    # tool icons inside the rendered menu, and whatever a tool's own script
+    # asks for. An unused sprite in docs/ therefore costs the page nothing.
+    missing = check_assets(page)
+    if missing:
+        fail("Could not rebuild the page. Nothing under docs/ answers to: {}".format(
+            ", ".join(missing)))
+    # Longest route first, so one filename can never eat another that starts
+    # the same way.
+    for route, path in sorted(ui.assets().items(), key=lambda item: -len(item[0])):
+        if route in page:
+            page = page.replace(route, data_uri(path))
+
     # The banner goes in last, so nothing above can scan it for tags.
     page = page.replace(DOCTYPE, DOCTYPE + "\n" + BANNER, 1)
 

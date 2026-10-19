@@ -27,12 +27,12 @@ web/index.html      the shell: header, home menu, tool page
 web/style.css       the theme
 web/app.js          the router, the menu, toasts, the solver bridge
 web/tools/*.js      one file per tool's UI (none yet)
-web/images/*.png    tool icons, display size
 solvers/            the Python behind the tools, one module per tool
-server.py           serves web/ and answers /api/solve/<tool>
+server.py           serves web/ and docs/, answers /api/solve/<tool>
 build_standalone.py bundles all of the above into index.html
 index.html          GENERATED — never edit it by hand
-docs/images/        the original full-size sprites
+docs/images/<tool>/ that tool's sprites
+docs/audio/         sounds
 ```
 
 `web/index.html` and the scripts carry `{{key}}` placeholders. `server.py`
@@ -45,10 +45,12 @@ built `index.html`.
 
 ## Adding a tool
 
-1. Add an entry to `TOOLS` in `ui.py` — `id`, `title`, `icon`, `blurb` — and
-   its icon to `IMAGES`. That alone gives it a card on the home screen and a
-   page at `#/<id>`, showing a placeholder.
-2. Drop its icon in `web/images/` (a copy of the sprite, scaled to ~128px).
+1. Put its sprites in `docs/images/<tool>/`. Anything under `docs/` is served
+   at the matching URL — `docs/images/light_box/light_on.png` is
+   `/images/light_box/light_on.png` — with no code change.
+2. Add an entry to `TOOLS` in `ui.py` — `id`, `title`, `icon`, `blurb`. That
+   alone gives it a card on the home screen and a page at `#/<id>`, showing a
+   placeholder.
 3. Write `web/tools/<id>.js`, ending with
    `registerTool("<id>", { mount(page, tool) { ... } })`. `mount` is handed the
    tool's own empty element and may return a teardown function.
@@ -59,7 +61,10 @@ built `index.html`.
 
 ## The generated page
 
-`index.html` is built from `web/` and `ui.py`. It is rebuilt and staged
+`index.html` is built from `web/`, `docs/` and `ui.py`. It carries only the
+assets the page actually refers to, so an unused sprite under `docs/` costs it
+nothing, and a reference to a file that is not there fails the build rather
+than shipping a broken image. It is rebuilt and staged
 automatically by the `pre-commit` hook, and `pre-push` refuses to push one that
 does not match its sources. Install the hooks once per clone:
 
