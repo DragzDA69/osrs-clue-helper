@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{app_name}}</title>
+<link rel="icon" type="image/png" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon.png">
+<meta name="apple-mobile-web-app-title" content="{{app_name}}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">
+    <h1>
+      <!-- Swapped for the tool's own icon and name once a tool page opens. -->
+      <img class="logo" id="brandIcon" src="/icon.png" alt="">
+      <span id="brandName"><span class="lead">{{brand_lead}}</span> <span>{{brand_tail}}</span></span>
+    </h1>
+    <span class="developer-credit">{{developer_credit}}</span>
+  </div>
+  <p class="dict app-description" id="appInfo">
+    <span>{{app_description_lead}}</span> <span>{{app_description_tail}}</span>
+  </p>
+</header>
+
+<main>
+
+  <!-- Shown on every page but the home screen. -->
+  <button type="button" class="backbtn" id="back" title="{{title_back}}" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 5 L8 12 L15 19"/>
+    </svg>
+    <span>{{btn_back}}</span>
+  </button>
+
+  <!-- The home screen: one card per tool in ui.py's TOOLS. -->
+  <section class="page" id="page-home">
+    <h2 class="pagetitle">{{home_heading}}</h2>
+    <p class="dict pagehint">{{home_hint}}</p>
+    <div class="menu" id="menu"></div>
+  </section>
+
+  <!-- Every tool page is built into here by app.js. -->
+  <section class="page" id="page-tool" hidden></section>
+
+  <section id="status" class="status" aria-live="polite"></section>
+
+</main>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

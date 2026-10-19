@@ -1,0 +1,380 @@
+:root {
+  --bg: #11131a;
+  --panel: #181b24;
+  --panel-2: #1f2430;
+  --line: #2b3140;
+  --ink: #e6e9f0;
+  --ink-dim: #9aa3b5;
+  --ink-faint: #6b7489;
+  --placeholder: #4d5360;
+  --arrow-stroke: 0.5px;   /* how heavy the ↓ / → disclosure arrows read */
+  --arrow-long: 1.2;       /* stretch along the arrow's own axis */
+  --arrow-wide: 1.18;      /* and across it */
+  --accent: #6ea8fe;
+  --accent-ink: #0d1117;
+  --wild: #f0b45e;
+  --radius: 10px;
+  --toast-fade: {{toast_fade_ms}}ms;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6fa;
+    --panel: #ffffff;
+    --panel-2: #eef1f7;
+    --line: #d9dfea;
+    --ink: #1a1f2b;
+    --ink-dim: #5a6479;
+    --ink-faint: #8a93a6;
+    --placeholder: #b0b6c4;
+    --accent: #2f6fe4;
+    --accent-ink: #ffffff;
+    --wild: #a96a12;
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* The hidden attribute loses to any author `display` rule -- a card is a grid,
+   a page is a block -- so toggling it would otherwise do nothing at all. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.bar {
+  display: flex;
+  /* Centre, not baseline: the h1 starts with the icon, and a flex container
+     whose first item has no text baseline reports its bottom edge instead --
+     which dropped the description below the title. */
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.bar h1 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: 0;
+}
+.developer-credit {
+  margin-left: 31px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.bar.compact .brand {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  max-width: 100%;
+}
+.bar.compact .developer-credit { margin-left: 0; }
+.bar.compact #appInfo { flex-basis: 100%; }
+.dict.app-description { font-size: 16px; }
+.bar:not(.compact) #appInfo {
+  align-self: flex-start;
+  padding-top: 1.5px;
+}
+/* Decorative: the name is right beside it, so it carries an empty alt. */
+.logo { width: 22px; height: 22px; flex: none; border-radius: 5px; object-fit: contain; }
+.bar h1 .lead { color: var(--ink-faint); font-weight: 400; }
+.dict { margin: 0; color: var(--ink-faint); font-size: 13px; }
+/* Each sentence is its own block, so when the line is too narrow the break
+   falls between them instead of part-way through one. */
+.dict span { display: inline-block; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+/* --- the back control ----------------------------------------------------
+   Sits above the page it would leave, aligned with the content's left edge. */
+.backbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 16px -8px;
+  padding: 6px 12px 6px 8px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.backbtn svg { width: 18px; height: 18px; flex: none; }
+.backbtn:hover { color: var(--ink); background: var(--panel-2); }
+.backbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pagetitle {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+/* The tool page repeats the card's icon beside its name, at the same scale
+   the card shows it, so the two read as the same object. */
+.pagetitle .toolicon { width: 34px; height: 34px; flex: none; object-fit: contain; }
+.pagehint { margin-top: 6px; }
+
+/* --- the home menu -------------------------------------------------------
+   Cards that stretch to fill the row, so two tools are two halves and the
+   grid never leaves a lone stranded card on a wide screen. */
+.menu {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+.tile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 20px;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.14s, background 0.14s, transform 0.08s;
+}
+.tile:hover { border-color: var(--accent); background: var(--panel-2); }
+.tile:active { transform: scale(0.99); }
+.tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tile img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  /* OSRS sprites are small and crisp; let them stay that way when scaled. */
+  image-rendering: -webkit-optimize-contrast;
+}
+.tile .name {
+  display: block;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.tile .blurb {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* --- a tool's own surface ------------------------------------------------ */
+.card {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.card h3 { margin: 0 0 8px; font-size: 15px; font-weight: 650; }
+.card p { margin: 0; color: var(--ink-dim); font-size: 14px; }
+
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  margin-bottom: 6px;
+}
+.hint { display: block; margin-top: 5px; font-size: 12px; color: var(--ink-faint); }
+
+kbd {
+  font: inherit;
+  font-size: 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+input[type=text], input[type=number], select {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  padding: 9px 11px;
+  font: inherit;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* The opacity is set explicitly rather than left alone: Firefox applies its
+   own, so leaving it out makes the two browsers disagree about how faint
+   this is. */
+::placeholder { color: var(--placeholder); opacity: 0.7; }
+
+input:focus, select:focus, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Sits inside a field, vertically centred whatever the input's height. */
+.clearbtn {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.clearbtn.small { width: 28px; height: 28px; right: 8px; }
+.clearbtn svg { display: block; width: 20px; height: 20px; }
+.clearbtn.small svg { width: 16px; height: 16px; }
+.clearbtn:hover { background: var(--panel-2); color: var(--ink); }
+.clearbtn:active, .clearbtn.small:active { transform: translateY(-50%) scale(0.92); }
+
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button {
+  background: var(--panel-2);
+  border: 0;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 13px;
+  cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.seg button:hover:not(.on) { color: var(--ink); }
+
+button[type=submit], .secondary-btn {
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  padding: 9px 18px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+}
+button[type=submit] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+  transition: filter 0.15s;
+}
+button[type=submit]:hover { filter: brightness(1.08); }
+button.secondary-btn {
+  background: var(--panel-2);
+  color: var(--ink-dim);
+  border-color: var(--line);
+  transition: filter 0.15s, color 0.15s;
+}
+.secondary-btn:hover:not(:disabled) { filter: brightness(1.08); color: var(--ink); }
+.secondary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.status { margin: 18px 2px 0; font-size: 14px; color: var(--ink-dim); min-height: 21px; }
+.status.err { color: #ff8585; }
+
+.empty { color: var(--ink-faint); padding: 20px 2px; }
+
+/* --- toast ---------------------------------------------------------------
+   A confirmation that behaves like an Android toast: it slides and fades up
+   from the bottom, waits, then goes back down. The host never takes a pointer
+   event, so nothing underneath is ever blocked. */
+.toasts {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px calc(26px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity var(--toast-fade) ease,
+              transform var(--toast-fade) cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+/* A solid dark chip, a shade off the toast's own ink (--accent-ink is #0d1117
+   in the dark theme) rather than a wash of the accent underneath. Flat so it
+   holds the same colour in both themes; white on it runs about 17:1. */
+.toast code {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 13px;
+  color: #fff;
+  background: #161b24;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  padding: 1px 7px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { transform: none; transition: opacity 0.12s linear; }
+  .toast.show { transform: none; }
+}
+
+/* Phones: the bar loses its side padding to the content, and a card is the
+   full width of the screen rather than a column of two. */
+@media (max-width: 480px) {
+  .bar { padding: 14px 16px; }
+  main { padding: 18px 16px; }
+  .pagetitle { font-size: 20px; }
+  .tile { padding: 15px 16px; gap: 12px; }
+  .tile img { width: 38px; height: 38px; }
+}
