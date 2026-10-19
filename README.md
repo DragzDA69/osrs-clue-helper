@@ -32,7 +32,9 @@ server.py           serves web/ and docs/, answers /api/solve/<tool>
 build_standalone.py bundles all of the above into index.html
 index.html          GENERATED — never edit it by hand
 docs/images/<tool>/ that tool's sprites
+docs/images/font/   the interface font as a sprite sheet
 docs/audio/         sounds
+tools/              build-time scripts; nothing the site needs at runtime
 ```
 
 `web/index.html` and the scripts carry `{{key}}` placeholders. `server.py`
@@ -58,6 +60,26 @@ built `index.html`.
    name it in `solvers.MODULES`. The page reaches it with
    `await solve("<id>", payload)`, which posts to the server when one is there
    and calls `window.LOCAL_SOLVERS["<id>"]` in the standalone build.
+
+## OSRS buttons and the interface font
+
+The game's interface font is RuneScape Plain 12, from
+[RuneStar/fonts](https://github.com/RuneStar/fonts) (CC0). `tools/make_glyphs.py`
+renders it at 16px -- the size at which it lands on its own pixel grid -- into
+`tools/glyphs.json`, and `ui.py` turns that into one hidden `<svg>` of symbols
+in the page. Any character can then be set in the game's font, in any colour,
+from CSS:
+
+```js
+page.append(rsGlyph("Q"));                       // one character
+page.append(osrsButton("A", { toggle: true }));  // a lever
+```
+
+A button is three background sprites in total -- `btn_bg.svg`,
+`btn_bg_hover.svg`, `btn_bg_selected.svg`, built by `tools/osrs_buttons.py` --
+with the glyph laid over the middle. A new label costs a character of markup,
+not three more files. Everything scales from `--btn-px`, one game pixel, so the
+button and its letter stay on the same grid at any size.
 
 ## The generated page
 

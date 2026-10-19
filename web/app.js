@@ -203,6 +203,118 @@ function flash(message, isError) {
 }
 window.flash = flash;
 
+// --- OSRS buttons ---------------------------------------------------------
+
+/* A button is three background sprites plus a glyph from the sheet ui.py puts
+ * in the page, so a new label costs nothing but the character itself.
+ */
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+/** The symbol id for a character. Case matters in this font -- 'a' and 'A'
+    are different glyphs -- so lowercase is suffixed rather than colliding.
+    This has to agree with ui.symbol_id(). */
+function glyphId(char) {
+  return char === char.toLowerCase() && char !== char.toUpperCase()
+    ? char.toUpperCase() + "-lower"
+    : char;
+}
+
+/** One character of the interface font, as an element. Colour comes from CSS. */
+function rsGlyph(char) {
+  const id = glyphId(char);
+  const symbol = document.getElementById("g-" + id);
+  if (!symbol) throw new Error("No glyph for " + JSON.stringify(char));
+
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("class", "rs-glyph");
+  svg.setAttribute("aria-hidden", "true");
+  // Read the size off the symbol rather than keeping a second copy of the
+  // font's metrics here: the glyph scales as a whole, ink-tight and centred.
+  const box = symbol.viewBox.baseVal;
+  svg.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
+  svg.style.setProperty("--glyph-w", box.width);
+  svg.style.setProperty("--glyph-h", box.height);
+
+  const use = document.createElementNS(SVG_NS, "use");
+  use.setAttribute("href", "#g-" + id);
+  svg.append(use);
+  return svg;
+}
+window.rsGlyph = rsGlyph;
+
+/** A button drawn from the OSRS artwork.
+ *
+ *  osrsButton("A", { toggle: true, onPress: (pressed, label) => ... })
+ *
+ *  `toggle` makes it stay down once pressed, which is what a lever needs;
+ *  without it the button is momentary. The element carries `pressed` as a
+ *  property, so a caller can read it or set it back.
+ */
+function osrsButton(label, { toggle = false, onPress = null, title = "" } = {}) {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.className = "osrs-btn";
+  el.dataset.label = label;
+  // The glyph is decorative markup, so the name has to be given here.
+  el.setAttribute("aria-label", title || label);
+  if (toggle) el.setAttribute("aria-pressed", "false");
+  el.append(rsGlyph(label));
+
+  Object.defineProperty(el, "pressed", {
+    get: () => el.getAttribute("aria-pressed") === "true",
+    set: (on) => el.setAttribute("aria-pressed", String(Boolean(on))),
+  });
+
+  el.addEventListener("click", () => {
+    if (toggle) el.pressed = !el.pressed;
+    if (onPress) onPress(el.pressed, label, el);
+  });
+  return el;
+}
+window.osrsButton = osrsButton;
+
+// --- sound ----------------------------------------------------------------
+
+/* Every tool plays its sounds through here, so one switch silences the lot.
+ * The choice is remembered per browser: someone who turned the sound off does
+ * not want it back on the next visit. Storage can throw or come back empty --
+ * a private window, blocked site data -- and the switch still works, it just
+ * starts where the markup left it.
+ */
+const MUTE_KEY = "clue-helper.mute";
+let muted = false;
+try {
+  muted = localStorage.getItem(MUTE_KEY) === "1";
+} catch {}
+
+/* One element per sound, cloned to play. Replaying a single element cuts the
+   previous play off, which is wrong when taps come faster than the sound. */
+const sounds = new Map();
+
+function playSound(url) {
+  if (muted) return;
+  let source = sounds.get(url);
+  if (!source) {
+    source = new Audio(url);
+    source.preload = "auto";
+    sounds.set(url, source);
+  }
+  const play = source.cloneNode();
+  play.volume = 0.5;
+  // Autoplay rules, a missing file, a device with no output: none of these
+  // are worth interrupting the puzzle over.
+  const started = play.play();
+  if (started) started.catch(() => {});
+}
+window.playSound = playSound;
+
+$("mute").addEventListener("change", (event) => {
+  muted = event.target.checked;
+  try {
+    localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
+  } catch {}
+});
+
 // --- copying --------------------------------------------------------------
 
 async function copyText(text) {
@@ -320,6 +432,9 @@ function syncBrandLayout() {
 window.addEventListener("hashchange", render);
 
 (function init() {
+  // The switch starts where the remembered choice left it, not where the
+  // markup does.
+  $("mute").checked = muted;
   buildMenu();
   render();
   let headerWidth = null;

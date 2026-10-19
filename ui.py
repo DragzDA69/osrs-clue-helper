@@ -97,6 +97,55 @@ def tool_script_tags() -> str:
                    for name in tool_scripts())
 
 
+# --- the OSRS interface font ------------------------------------------------
+GLYPH_DATA = HERE / "tools" / "glyphs.json"
+
+
+def glyph_symbols() -> str:
+    """Every character of the interface font, as one hidden <svg> of symbols.
+
+    A button does not carry its letter as a picture: it points at one of these.
+    That is the whole reason there are three button backgrounds instead of
+    three per label -- and it means any character can be set in the game's font
+    anywhere on the page, in any colour, by CSS alone.
+
+    Each glyph is a single <path>: one horizontal run of pixels per segment,
+    which is a third the size of a rect each and draws the same.
+    """
+    if not GLYPH_DATA.exists():
+        return ""
+    data = json.loads(GLYPH_DATA.read_text(encoding="utf-8"))
+
+    out = ['<svg xmlns="http://www.w3.org/2000/svg" class="glyph-sheet" aria-hidden="true">']
+    for char, glyph in data["glyphs"].items():
+        rows = glyph["rows"]
+        width, height = len(rows[0]), len(rows)
+        segments = []
+        for y, row in enumerate(rows):
+            x = 0
+            while x < len(row):
+                if row[x] != "#":
+                    x += 1
+                    continue
+                start = x
+                while x < len(row) and row[x] == "#":
+                    x += 1
+                segments.append("M{} {}h{}v1h-{}z".format(start, y, x - start, x - start))
+        out.append('<symbol id="g-{}" viewBox="0 0 {} {}">'
+                   '<path d="{}"/></symbol>'.format(
+                       symbol_id(char), width, height, "".join(segments)))
+    out.append("</svg>")
+    return "".join(out)
+
+
+def symbol_id(char: str) -> str:
+    """An id that survives being put in an href: case matters in this font, and
+    'a' and 'A' are different glyphs, so lowercase gets a suffix rather than
+    colliding."""
+    return char if not char.islower() else char.upper() + "-lower"
+
+
+
 # The app's own mark: the browser tab, the iOS home screen, and the header
 # beside the name.
 APP_ICON = "/images/clue_scroll_(master).png"
@@ -132,7 +181,7 @@ VALUES: dict[str, object] = {
     "developer_credit": "Developed by Dragz",
     # Two sentences, kept apart: the header puts each in its own inline-block,
     # so a line break lands between them rather than mid-sentence.
-    "app_description_lead": "Tools for solving Old School RuneScape clue scrolls.",
+    "app_description_lead": "Old School RuneScape clue scroll solving tools.",
     "app_description_tail": "Pick a tool to begin.",
 
     # -- home --------------------------------------------------------------
@@ -140,6 +189,7 @@ VALUES: dict[str, object] = {
     "home_hint": "Choose the clue step you are stuck on.",
     "btn_back": "All tools",
     "title_back": "Back to all tools",
+    "toggle_mute": "Disable Sounds",
 
     # -- tool pages --------------------------------------------------------
     "tool_placeholder_heading": "Nothing here yet",
@@ -147,6 +197,13 @@ VALUES: dict[str, object] = {
         "This tool is still being built. The page, the route and the layout "
         "are in place, so the solver can drop straight in.",
     "msg_unknown_tool": "That tool does not exist.",
+
+    # -- light box ---------------------------------------------------------
+    "lb_prompt": "Tap a light to turn it on, and again to turn it off.",
+    "lb_light_label": "Light, row {r}, column {c}",
+    "lb_lever_label": "Lever {label}",
+    "btn_reset": "Reset",
+    "btn_solve": "Solve",
 
     # -- shared controls ---------------------------------------------------
     "title_clear": "Clear",
@@ -168,7 +225,9 @@ PLACEHOLDER = re.compile("[{]{2}([a-z0-9_]+)[}]{2}")
 def render(text: str, where: str = "") -> str:
     """Replace every {{key}} in `text`. An unknown key is an error, so a typo
     fails the build instead of shipping a literal `{{key}}` to the page."""
-    values = dict(VALUES, tool_scripts=tool_script_tags())
+    values = dict(VALUES,
+                  tool_scripts=tool_script_tags(),
+                  glyph_symbols=glyph_symbols())
     missing = sorted({m.group(1) for m in PLACEHOLDER.finditer(text)} - set(values))
     if missing:
         raise KeyError("{}: no such value{}: {}".format(
@@ -177,5 +236,9 @@ def render(text: str, where: str = "") -> str:
 
 
 if __name__ == "__main__":
-    for key, value in dict(VALUES, tool_scripts=tool_script_tags()).items():
+    for key, value in dict(
+            VALUES,
+            tool_scripts=tool_script_tags(),
+            glyph_symbols="<svg>...{} glyphs...</svg>".format(
+                len(json.loads(GLYPH_DATA.read_text(encoding="utf-8"))["glyphs"]))).items():
         print("{:<24} {}".format(key, value))
