@@ -140,21 +140,17 @@ VALUES: dict[str, object] = {
 
     # -- tool pages --------------------------------------------------------
     "tool_placeholder_heading": "Nothing here yet",
-    "tool_placeholder_body":
-        "This tool is still being built. The page, the route and the layout "
-        "are in place, so the solver can drop straight in.",
+    "tool_placeholder_body": "This tool is still being built. The page, the route and the layout are in place, so the solver can drop straight in.",
     "msg_unknown_tool": "That tool does not exist.",
 
     # -- light box ---------------------------------------------------------
-    "lb_prompt": "Work through the levers in order. Press one in the game, then "
-                 "tap every light that is lit afterwards.",
-    "lb_step_start": "Select lever A to begin.",
+    "lb_prompt": "Use this step by step interactive light box to mimic lights and levers in game to find the final solution.",
+    "lb_enter_start": "Enter your starting combination",
     "lb_step": "Lever {label}: tap every light that is on after pressing it.",
     "lb_step_count": "{n} lit",
     "lb_ready": "All eight levers recorded. Press Solve.",
     "lb_few_title": "Only {n} lit for lever {label}?",
-    "lb_few_message": "A lever usually changes more lights than that, so this "
-                      "often means a light was missed.",
+    "lb_few_message": "A lever usually changes more lights than that, so this often means a light was missed.",
     "lb_few_note": "Moving on locks lever {label} in as it stands.",
     "btn_continue": "Continue anyway",
     "lb_solving": "Solving…",
@@ -163,6 +159,7 @@ VALUES: dict[str, object] = {
     "lb_light_label": "Light, row {r}, column {c}",
     "lb_lever_label": "Lever {label}",
     "btn_reset": "Reset",
+    "btn_set_start": "Set Start",
     "btn_solve": "Solve",
 
     # -- confirming something that throws work away ------------------------

@@ -14,18 +14,22 @@
  * pressed, then once after each of A..H. The difference between one reading
  * and the next is exactly what that lever toggles.
  *
- * This does the same with eight readings, because the box starts with every
- * light off: that all-off board is the ninth reading, and it is already on the
- * screen before the first lever is chosen. So:
+ * This does the same. The first reading is the starting combination, entered
+ * and locked in with Set Start before any lever can be chosen -- a box does not
+ * have to begin dark, so nothing can be assumed about it. Set Start then moves
+ * straight on to lever A. So:
  *
- *     lever A's mask = (board after A) xor (all off)
+ *     lever A's mask = (board after A) xor (the starting combination)
  *     lever B's mask = (board after B) xor (board after A)
  *     ... and the board after H is what the answer is worked out from.
  *
- * The board is cleared between levers, so each reading is entered from a dark
- * board rather than adjusted from the one before. What is entered is still the
- * whole board as it stands in the game after that lever has been pressed --
- * that is what the differences above are taken between.
+ * The board is cleared after the start and between levers, so each reading is
+ * entered from a dark board rather than adjusted from the one before. What is
+ * entered is still the whole board as it stands in the game after that lever
+ * has been pressed -- that is what the differences above are taken between.
+ *
+ * Set Start takes the board exactly as it was entered, however few lights that
+ * is, and there is no way back from it: Reset is how a box is begun again.
  *
  * Every position here is a percentage of the artwork, measured off
  * light_box_start.png (1011x969) rather than guessed. The bulbs sit on a 5x5
@@ -50,14 +54,14 @@
     reset: "/audio/board_reset.wav",
   };
 
-  const ALL_OFF = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-
   registerTool("light-box", {
     mount(page, tool) {
       const lights = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
       const buttons = [];
       const levers = new Map();
 
+      let started = false;
+      let start = null;
       let current = null;
       const readings = new Map();
       let solved = false;
@@ -137,6 +141,20 @@
         return lights.flat().filter(Boolean).length;
       }
 
+      // --- the starting combination ---------------------------------------
+
+      /* Locks in the board as entered, then goes straight on to lever A, so the
+         first thing left to do is read the board after pulling it. The start is
+         not questioned the way a lever's reading is -- an empty board, or a
+         nearly empty one, is a fair start. */
+      function setStart() {
+        if (started) return;
+        start = snapshot();
+        started = true;
+        clearLights();
+        chooseLever(LEVERS[0]);
+      }
+
       // --- the lever sequence ---------------------------------------------
 
       function nextLever() {
@@ -146,7 +164,7 @@
       }
 
       async function chooseLever(label) {
-        if (solved || label !== nextLever()) return;
+        if (!started || solved || label !== nextLever()) return;
 
         // Moving on locks in what is on the board as the reading for the lever
         // before this one, so this is the moment to question a thin board.
@@ -175,19 +193,23 @@
         for (const [label, lever] of levers) {
           const done = readings.has(label) || label === current;
           lever.pressed = done;
-          lever.disabled = solved || (!done && label !== next);
+          lever.disabled = solved || !started || (!done && label !== next);
         }
 
-        const open = current !== null && !solved;
-        for (const light of buttons) light.disabled = !open;
+        // Open for the start, and then for each lever's reading in turn.
+        for (const light of buttons) light.disabled = solved;
 
         const lit = litCount();
         const ready = current === LEVERS.at(-1) && lit >= FEW_LIGHTS;
+
+        // Only one of these is ever live: Set Start until it is set, then Solve.
+        startBtn.disabled = started;
         solveBtn.disabled = solved || !ready;
+        startPrompt.textContent = started ? "" : "{{lb_enter_start}}";
 
         if (solved) return;
-        if (current === null) {
-          flash("{{lb_step_start}}");
+        if (!started) {
+          flash("");
         } else if (ready) {
           flash("{{lb_ready}}");
         } else {
@@ -200,7 +222,7 @@
 
       function request() {
         const switches = {};
-        let before = ALL_OFF;
+        let before = start;
         for (const label of LEVERS) {
           const after = label === current ? snapshot() : readings.get(label);
           switches[label] = { before, after };
@@ -243,7 +265,7 @@
       // --- resetting -------------------------------------------------------
 
       function touched() {
-        return current !== null || litCount() > 0;
+        return started || litCount() > 0;
       }
 
       function reset() {
@@ -251,6 +273,8 @@
         answerCaption.textContent = "";
         answerChips.replaceChildren();
         clearLights();
+        started = false;
+        start = null;
         current = null;
         solved = false;
         readings.clear();
@@ -278,13 +302,19 @@
         if (go) reset();
       });
 
+      const startBtn = document.createElement("button");
+      startBtn.type = "button";
+      startBtn.className = "primary-btn";
+      startBtn.textContent = "{{btn_set_start}}";
+      startBtn.addEventListener("click", setStart);
+
       const solveBtn = document.createElement("button");
       solveBtn.type = "button";
       solveBtn.className = "primary-btn";
       solveBtn.textContent = "{{btn_solve}}";
       solveBtn.addEventListener("click", runSolve);
 
-      actions.append(resetBtn, solveBtn);
+      actions.append(resetBtn, startBtn, solveBtn);
 
       const answer = document.createElement("div");
       answer.className = "answer";
@@ -301,10 +331,13 @@
       hint.className = "dict pagehint";
       hint.textContent = "{{lb_prompt}}";
 
+      const startPrompt = document.createElement("p");
+      startPrompt.className = "startprompt";
+
       const status = document.getElementById("status");
       const statusHome = status.parentNode;
 
-      page.append(hint, box, status, actions, answer);
+      page.append(hint, startPrompt, box, status, actions, answer);
       refresh();
 
       return () => statusHome.append(status);

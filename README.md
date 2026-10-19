@@ -51,12 +51,13 @@ The lights a lever changes is different in every box; the helper watches yours a
 #### How to use it
 
 1. Open the light box in game, and open this tool beside it.
-2. Select **lever A** here, then pull lever A in the game.
-3. Tap the lights on the helper's box so they match the lights that are lit in the game.
-4. Select **lever B** and do the same. The board clears each time — you are
+2. Before pulling anything, tap the lights on the helper's box so they match the lights lit in the game, then press **Set Start**. Lever A is selected for you.
+3. Pull lever A in the game.
+4. Tap the lights on the helper's box so they match the lights that are lit in the game.
+5. Select **lever B** and do the same. The board clears each time — you are
 recording how the box looks after each lever, not editing the last one.
-5. Work through to **lever H** in order. Levers unlock one at a time, so there no way to lose your place.
-6. Press **Solve**.
+6. Work through to **lever H** in order. Levers unlock one at a time, so there no way to lose your place.
+7. Press **Solve**.
 
 The answer comes back as a row of levers, as in the picture above. 
 Pull each one once in the game, and tap it here to keep your place.
@@ -67,7 +68,8 @@ Pull each one once in the game, and tap it here to keep your place.
 One mis-noted light is enough to make a solvable box look unsolvable.
 - Move on with very few lights lit and the helper asks whether you are sure —
   that usually means a light was missed.
-- **Reset** clears the board and starts the box over.
+- **Set Start** takes the board exactly as you entered it, and there is no going back from it.
+- **Reset** clears the board and starts the box over — including the starting combination.
 
 ---
 

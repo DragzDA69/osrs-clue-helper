@@ -635,6 +635,17 @@ button.secondary-btn {
   height: 9.693cqw;
 }
 
+/* What to do first, above the board. It is emptied once that step is done but
+   keeps its height, so the board and the buttons below do not jump upward
+   just as a finger is lifting off Set Start. */
+.startprompt {
+  margin: 14px 2px 10px;
+  min-height: 21px;
+  font-size: 14px;
+  color: var(--ink-dim);
+  text-align: center;
+}
+
 /* The row of actions under a tool. */
 .toolactions {
   display: flex;
