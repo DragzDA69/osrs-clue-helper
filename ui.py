@@ -32,24 +32,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 WEB = HERE / "web"
-# Every image and sound lives under docs/, laid out by the tool it belongs to.
-# It is the one copy of each asset: the server hands them out from here and the
-# standalone build inlines them from here.
 DOCS = HERE / "docs"
-
-# The two halves of the name are separate because the header styles them
-# differently; app_name joins them for the title bars.
 BRAND_LEAD = "Clue"
 BRAND_TAIL = "Helper"
-
-# How long a toast sits on screen, and how long it takes to slide in or out.
-# The fade drives both the CSS transition and the JS that removes the element
-# afterwards, so the two can never fall out of step.
 TOAST_MS = 2000
 TOAST_FADE_MS = 220
-
-# What a page may ask for, by extension. Anything else under docs/ -- notes, a
-# README, a spare .psd -- is simply not part of the app and is never served.
 ASSET_TYPES = {
     ".png": "image/png",
     ".jpg": "image/jpeg",
@@ -64,14 +51,6 @@ ASSET_TYPES = {
 
 
 def assets() -> dict[str, Path]:
-    """Every asset under docs/, keyed by the URL a page refers to it by.
-
-    The URL mirrors the folder: docs/images/light_box/light_on.png is asked for
-    as /images/light_box/light_on.png. Nothing is listed by hand, so dropping a
-    sprite into docs/ is all it takes to be able to use it -- and the server
-    still works from a fixed list built here rather than resolving whatever
-    path a browser sends it.
-    """
     found: dict[str, Path] = {}
     if not DOCS.is_dir():
         return found
@@ -82,17 +61,11 @@ def assets() -> dict[str, Path]:
 
 
 def tool_scripts() -> list[str]:
-    """Every web/tools/*.js, in name order so a build is reproducible."""
     folder = WEB / "tools"
     return sorted(p.name for p in folder.glob("*.js")) if folder.is_dir() else []
 
 
 def tool_script_tags() -> str:
-    """The <script> tags that load the tools, for the served page. They come
-    after app.js, which is what lets each one register itself on load.
-
-    The standalone build inlines the same files instead, and strips this.
-    """
     return "".join('<script src="/tools/{}"></script>'.format(name)
                    for name in tool_scripts())
 
@@ -102,16 +75,6 @@ GLYPH_DATA = HERE / "tools" / "glyphs.json"
 
 
 def glyph_symbols() -> str:
-    """Every character of the interface font, as one hidden <svg> of symbols.
-
-    A button does not carry its letter as a picture: it points at one of these.
-    That is the whole reason there are three button backgrounds instead of
-    three per label -- and it means any character can be set in the game's font
-    anywhere on the page, in any colour, by CSS alone.
-
-    Each glyph is a single <path>: one horizontal run of pixels per segment,
-    which is a third the size of a rect each and draws the same.
-    """
     if not GLYPH_DATA.exists():
         return ""
     data = json.loads(GLYPH_DATA.read_text(encoding="utf-8"))
@@ -139,24 +102,10 @@ def glyph_symbols() -> str:
 
 
 def symbol_id(char: str) -> str:
-    """An id that survives being put in an href: case matters in this font, and
-    'a' and 'A' are different glyphs, so lowercase gets a suffix rather than
-    colliding."""
     return char if not char.islower() else char.upper() + "-lower"
 
 
-
-# The app's own mark: the browser tab, the iOS home screen, and the header
-# beside the name.
 APP_ICON = "/images/clue_scroll_(master).png"
-
-# The home screen menu, in the order it is shown. Each tool becomes a card on
-# the home page and a page of its own at #/<id>.
-#
-#     id       the route, and the key app.js looks the tool up by
-#     title    the card's label, the page's heading and the browser title
-#     icon     the URL of its sprite under docs/
-#     blurb    one line under the title on the card
 TOOLS: list[dict[str, str]] = [
     {
         "id": "light-box",
@@ -179,8 +128,6 @@ VALUES: dict[str, object] = {
     "brand_lead": BRAND_LEAD,
     "brand_tail": BRAND_TAIL,
     "developer_credit": "Developed by Dragz",
-    # Two sentences, kept apart: the header puts each in its own inline-block,
-    # so a line break lands between them rather than mid-sentence.
     "app_description_lead": "Old School RuneScape clue scroll solving tools.",
     "app_description_tail": "Pick a tool to begin.",
 
@@ -199,11 +146,32 @@ VALUES: dict[str, object] = {
     "msg_unknown_tool": "That tool does not exist.",
 
     # -- light box ---------------------------------------------------------
-    "lb_prompt": "Tap a light to turn it on, and again to turn it off.",
+    "lb_prompt": "Work through the levers in order. Press one in the game, then "
+                 "tap every light that is lit afterwards.",
+    "lb_step_start": "Select lever A to begin.",
+    "lb_step": "Lever {label}: tap every light that is on after pressing it.",
+    "lb_step_count": "{n} lit",
+    "lb_ready": "All eight levers recorded. Press Solve.",
+    "lb_few_title": "Only {n} lit for lever {label}?",
+    "lb_few_message": "A lever usually changes more lights than that, so this "
+                      "often means a light was missed.",
+    "lb_few_note": "Moving on locks lever {label} in as it stands.",
+    "btn_continue": "Continue anyway",
+    "lb_solving": "Solving…",
+    "lb_answer": "Press the levers in this order to solve:",
+    "lb_answer_none": "Every light is already on.",
     "lb_light_label": "Light, row {r}, column {c}",
     "lb_lever_label": "Lever {label}",
     "btn_reset": "Reset",
     "btn_solve": "Solve",
+
+    # -- confirming something that throws work away ------------------------
+    "btn_cancel": "Cancel",
+    "btn_confirm": "Confirm",
+    "msg_cannot_undo": "This cannot be undone.",
+    "lb_reset_title": "Reset the board?",
+    "lb_reset_message": "Every light and lever goes back to how it started.",
+    "btn_confirm_reset": "Reset board",
 
     # -- shared controls ---------------------------------------------------
     "title_clear": "Clear",
@@ -215,7 +183,6 @@ VALUES: dict[str, object] = {
     "toast_fade_ms": TOAST_FADE_MS,
 
     # -- data the scripts read ---------------------------------------------
-    # Rendered into app.js, so the menu is defined once, here.
     "tools_json": json.dumps(TOOLS, separators=(",", ":")),
 }
 
@@ -223,8 +190,6 @@ PLACEHOLDER = re.compile("[{]{2}([a-z0-9_]+)[}]{2}")
 
 
 def render(text: str, where: str = "") -> str:
-    """Replace every {{key}} in `text`. An unknown key is an error, so a typo
-    fails the build instead of shipping a literal `{{key}}` to the page."""
     values = dict(VALUES,
                   tool_scripts=tool_script_tags(),
                   glyph_symbols=glyph_symbols())

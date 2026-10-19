@@ -28,24 +28,16 @@ ROOT = HERE.parent
 FONT = HERE / "RuneScape-Plain-12.ttf"
 OUT = HERE / "glyphs.json"
 SHEET_DIR = ROOT / "docs" / "images" / "font"
-
-# The size at which this font lands on its native pixel grid. Anything else
-# gives the antialiased mush a pixel font is meant to avoid.
 SIZE = 16
 INK = 110          # a pixel is on above this, off below; the font is 1-bit
-
+ORIGIN = (12, 12)
+CANVAS = (56, 56)
 CHARS = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
          "abcdefghijklmnopqrstuvwxyz"
          "0123456789")
 
-# Where the pen is put on the scratch canvas, so a glyph that reaches left of
-# the pen or below the baseline still has room.
-ORIGIN = (12, 12)
-CANVAS = (56, 56)
-
 
 def render(font, ch):
-    """One glyph: its ink rows, and where they sit relative to the pen."""
     img = Image.new("L", CANVAS, 0)
     ImageDraw.Draw(img).text(ORIGIN, ch, font=font, fill=255)
     box = img.getbbox()
@@ -60,12 +52,6 @@ def render(font, ch):
 
 
 def sprite_sheet(glyphs: dict) -> None:
-    """Every glyph in one image, on a fixed grid, with a map beside it.
-
-    Cells are uniform so a lookup is arithmetic rather than a table, and each
-    glyph is placed on its own baseline inside the cell, so 'g' hangs the way
-    it should.
-    """
     cols = 16
     cell_w = max(len(g["rows"][0]) for g in glyphs.values()) + 2
     tops = [g["top"] for g in glyphs.values()]

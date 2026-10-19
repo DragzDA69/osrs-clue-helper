@@ -16,20 +16,14 @@
 
 const $ = (id) => document.getElementById(id);
 
-/* Quoted so this file is valid JS before rendering as well as after. */
 const TOOLS = JSON.parse('{{tools_json}}');
 const TOAST_MS = +"{{toast_ms}}", TOAST_FADE_MS = +"{{toast_fade_ms}}";
 const APP_NAME = "{{app_name}}";
-
 const byId = new Map(TOOLS.map((tool) => [tool.id, tool]));
 
-/* Filled in by each tool's own script. A missing entry is not an error: the
-   route still opens, and shows the "not built yet" card. */
 const implementations = new Map();
 window.registerTool = (id, impl) => {
   implementations.set(id, impl);
-  // A tool script that loads after the router has already opened its page
-  // (or is re-registered during development) still gets to draw.
   if (current && current.id === id) openTool(id);
 };
 
@@ -79,10 +73,7 @@ $("back").addEventListener("click", () => go(null));
 
 // --- routing --------------------------------------------------------------
 
-/** Navigate to a tool, or to the home screen with `null`. */
 function go(id) {
-  // Let the hash drive the render, so the back button and a typed URL take
-  // exactly the same path through here as a click does.
   location.hash = id ? "#/" + id : "";
 }
 
@@ -131,7 +122,6 @@ function openTool(id) {
   }
 }
 
-/** Undo whatever the last tool set up outside its own page element. */
 function releaseTool() {
   if (typeof teardown === "function") teardown();
   teardown = null;
@@ -149,8 +139,6 @@ function toolHeading(tool) {
   return h;
 }
 
-/** The tool's own surface. Empty until its script mounts something into it;
-    a tool with no script yet gets the placeholder instead. */
 function toolBody(tool) {
   const body = document.createElement("div");
   body.className = "toolbody";
@@ -167,8 +155,6 @@ function toolBody(tool) {
   return body;
 }
 
-/** The header carries the tool's name and icon while its page is open, and
-    the app's own while it is not. */
 function setBrand(tool) {
   const icon = $("brandIcon");
   const name = $("brandName");
@@ -205,21 +191,14 @@ window.flash = flash;
 
 // --- OSRS buttons ---------------------------------------------------------
 
-/* A button is three background sprites plus a glyph from the sheet ui.py puts
- * in the page, so a new label costs nothing but the character itself.
- */
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-/** The symbol id for a character. Case matters in this font -- 'a' and 'A'
-    are different glyphs -- so lowercase is suffixed rather than colliding.
-    This has to agree with ui.symbol_id(). */
 function glyphId(char) {
   return char === char.toLowerCase() && char !== char.toUpperCase()
     ? char.toUpperCase() + "-lower"
     : char;
 }
 
-/** One character of the interface font, as an element. Colour comes from CSS. */
 function rsGlyph(char) {
   const id = glyphId(char);
   const symbol = document.getElementById("g-" + id);
@@ -228,8 +207,6 @@ function rsGlyph(char) {
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("class", "rs-glyph");
   svg.setAttribute("aria-hidden", "true");
-  // Read the size off the symbol rather than keeping a second copy of the
-  // font's metrics here: the glyph scales as a whole, ink-tight and centred.
   const box = symbol.viewBox.baseVal;
   svg.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
   svg.style.setProperty("--glyph-w", box.width);
@@ -242,20 +219,11 @@ function rsGlyph(char) {
 }
 window.rsGlyph = rsGlyph;
 
-/** A button drawn from the OSRS artwork.
- *
- *  osrsButton("A", { toggle: true, onPress: (pressed, label) => ... })
- *
- *  `toggle` makes it stay down once pressed, which is what a lever needs;
- *  without it the button is momentary. The element carries `pressed` as a
- *  property, so a caller can read it or set it back.
- */
 function osrsButton(label, { toggle = false, onPress = null, title = "" } = {}) {
   const el = document.createElement("button");
   el.type = "button";
   el.className = "osrs-btn";
   el.dataset.label = label;
-  // The glyph is decorative markup, so the name has to be given here.
   el.setAttribute("aria-label", title || label);
   if (toggle) el.setAttribute("aria-pressed", "false");
   el.append(rsGlyph(label));
@@ -273,22 +241,65 @@ function osrsButton(label, { toggle = false, onPress = null, title = "" } = {}) 
 }
 window.osrsButton = osrsButton;
 
+function osrsChip(label, { toggle = false } = {}) {
+  const el = document.createElement(toggle ? "button" : "span");
+  el.className = "osrs-chip";
+  el.dataset.label = label;
+  if (toggle) {
+    el.type = "button";
+    el.setAttribute("aria-pressed", "false");
+    el.setAttribute("aria-label", label);
+    el.addEventListener("click", () => {
+      el.setAttribute("aria-pressed",
+        String(el.getAttribute("aria-pressed") !== "true"));
+    });
+  }
+  el.append(rsGlyph(label));
+  return el;
+}
+window.osrsChip = osrsChip;
+
+// --- confirming -----------------------------------------------------------
+
+function confirmAction({ title, message, note, confirm }) {
+  const dialog = $("confirmDialog");
+  const noteEl = $("confirmNote");
+  $("confirmTitle").textContent = title;
+  $("confirmMessage").textContent = message;
+  noteEl.textContent = note || "";
+  noteEl.hidden = !note;
+  if (confirm) $("confirmGo").textContent = confirm;
+
+  return new Promise((resolve) => {
+    const buttons = [...dialog.querySelectorAll("button[value]")];
+
+    function finish(agreed) {
+      for (const button of buttons) button.removeEventListener("click", onClick);
+      dialog.removeEventListener("cancel", onCancel);
+      dialog.removeEventListener("close", onClose);
+      if (dialog.open) dialog.close();
+      resolve(agreed);
+    }
+    function onClick(event) { finish(event.currentTarget.value === "confirm"); }
+    function onCancel() { finish(false); }            // Escape
+    function onClose() { finish(dialog.returnValue === "confirm"); }
+
+    for (const button of buttons) button.addEventListener("click", onClick);
+    dialog.addEventListener("cancel", onCancel);
+    dialog.addEventListener("close", onClose);
+    dialog.showModal();
+  });
+}
+window.confirmAction = confirmAction;
+
 // --- sound ----------------------------------------------------------------
 
-/* Every tool plays its sounds through here, so one switch silences the lot.
- * The choice is remembered per browser: someone who turned the sound off does
- * not want it back on the next visit. Storage can throw or come back empty --
- * a private window, blocked site data -- and the switch still works, it just
- * starts where the markup left it.
- */
 const MUTE_KEY = "clue-helper.mute";
 let muted = false;
 try {
   muted = localStorage.getItem(MUTE_KEY) === "1";
 } catch {}
 
-/* One element per sound, cloned to play. Replaying a single element cuts the
-   previous play off, which is wrong when taps come faster than the sound. */
 const sounds = new Map();
 
 function playSound(url) {
@@ -301,8 +312,6 @@ function playSound(url) {
   }
   const play = source.cloneNode();
   play.volume = 0.5;
-  // Autoplay rules, a missing file, a device with no output: none of these
-  // are worth interrupting the puzzle over.
   const started = play.play();
   if (started) started.catch(() => {});
 }
@@ -343,8 +352,6 @@ function legacyCopy(text) {
   return ok;
 }
 
-/* Android-style: a new toast wipes out whatever is on screen at once, rather
-   than queueing behind it or crossfading with it. */
 function toast(text) {
   const host = $("toasts");
   for (const old of host.querySelectorAll(".toast")) {
@@ -371,11 +378,6 @@ window.toast = toast;
 
 // --- the solver bridge ----------------------------------------------------
 
-/* Tools ask for an answer through here and never care which side computed it.
- * The served page posts to server.py; the standalone build has no server, so
- * it calls the matching function a tool's own script has registered under
- * window.LOCAL_SOLVERS. Either way a tool awaits one promise.
- */
 async function solve(tool, payload) {
   const local = window.LOCAL_SOLVERS && window.LOCAL_SOLVERS[tool];
   if (local) {
@@ -400,13 +402,8 @@ window.solve = solve;
 
 // --- startup --------------------------------------------------------------
 
-/* Captured before any tool swaps it out, so going home restores the real
-   icon rather than whichever tool was open last. */
 const HOME_ICON = $("brandIcon").src;
 
-/** Stack the header's two halves once the name and the description no longer
-    fit side by side. Measured rather than guessed at a breakpoint: the tool
-    names change the width of the first half. */
 function syncBrandLayout() {
   const bar = document.querySelector(".bar");
   const info = $("appInfo");

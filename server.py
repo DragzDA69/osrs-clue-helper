@@ -64,29 +64,16 @@ class LocalHTTPServer(ThreadingHTTPServer):
 
 
 def build_static() -> dict:
-    """The routes the server will answer, and the file behind each one.
-
-    An explicit allowlist, built by looking at the folders rather than by being
-    listed out here -- so a new tool script or a new sprite needs no edit -- but
-    still fixed before any request arrives, so a client-supplied path is never
-    resolved against the filesystem.
-
-    The flag says whether the file carries {{...}} placeholders for ui.py to
-    fill in on the way out.
-    """
     routes = {
         "/": (WEB / "index.html", "text/html; charset=utf-8", True),
         "/index.html": (WEB / "index.html", "text/html; charset=utf-8", True),
         "/style.css": (WEB / "style.css", "text/css; charset=utf-8", True),
         "/app.js": (WEB / "app.js", "text/javascript; charset=utf-8", True),
     }
-    # The tools, which the page loads after app.js -- that order is what lets
-    # each one register itself.
     routes.update({
         "/tools/" + name: (WEB / "tools" / name, "text/javascript; charset=utf-8", True)
         for name in ui.tool_scripts()
     })
-    # Every sprite and sound, from docs/.
     routes.update({
         route: (path, ui.ASSET_TYPES[path.suffix.lower()], False)
         for route, path in ui.assets().items()
@@ -106,7 +93,6 @@ SPECIAL_KEY_PREFIXES = {"\x00", "\xe0"}   # first half of an arrow/function key
 
 
 def has_console_keyboard() -> bool:
-    """Whether keys can be read at all -- not on a pipe, and not off Windows."""
     return msvcrt is not None and sys.stdin.isatty()
 
 
@@ -133,7 +119,6 @@ def keyboard_listener(events: "queue.Queue", stop: threading.Event) -> None:
 
 
 def rebuild_standalone() -> None:
-    """Use a fresh process so the builder reads the current UI copy from disk."""
     info("Recompiling the web page...")
     try:
         subprocess.run(
@@ -145,8 +130,6 @@ def rebuild_standalone() -> None:
 
 
 def reload_sources() -> None:
-    """Pick up edits to the solvers and the shared copy without a fresh process,
-    including a tool script or a sprite that was not there when this started."""
     importlib.reload(solvers)
     solvers.reload()
     global _ui_stamp, STATIC
@@ -157,7 +140,6 @@ def reload_sources() -> None:
 
 
 def render_ui(text: str, where: str) -> str:
-    """Keep labels in step with templates served from disk, across requests."""
     global _ui_stamp
     with _ui_lock:
         stat = Path(ui.__file__).stat()
@@ -207,7 +189,6 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(500, b"Missing file: " + path.name.encode(),
                              "text/plain; charset=utf-8")
         if templated:
-            # Rendered per request, so an edit to ui.py shows up on reload.
             try:
                 body = render_ui(body.decode("utf-8"), path.name).encode("utf-8")
             except (KeyError, OSError, UnicodeError) as exc:
@@ -283,8 +264,6 @@ def run(argv=None) -> None:
                     target=keyboard_listener, args=(events, stop_keys), daemon=True)
                 key_thread.start()
 
-            # serve_forever() on its own thread leaves this one free to wait on a
-            # keypress; shutdown() is what stops it, and must come from elsewhere.
             threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
             info("The app is ready at {}.".format(url))
@@ -321,7 +300,6 @@ def run(argv=None) -> None:
 
 
 def _wait_forever() -> str:
-    """Block until Ctrl+C when there is no keyboard to read."""
     threading.Event().wait()
     return "stop"
 

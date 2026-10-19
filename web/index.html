@@ -64,6 +64,20 @@
 
 </main>
 
+<!-- One dialog, reused: its words are set by whoever asks. -->
+<dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmTitle"
+        aria-describedby="confirmMessage">
+  <form method="dialog">
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmMessage"></p>
+    <p id="confirmNote" class="dialog-note" hidden></p>
+    <div class="dialog-actions">
+      <button type="submit" class="secondary-btn" value="cancel" autofocus>{{btn_cancel}}</button>
+      <button type="submit" class="primary-btn" value="confirm" id="confirmGo">{{btn_confirm}}</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
 
 <script src="/app.js"></script>

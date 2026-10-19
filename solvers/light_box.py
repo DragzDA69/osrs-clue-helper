@@ -34,39 +34,26 @@ LETTERS = "ABCDEFGH"
 
 Grid = tuple[tuple[int, ...], ...]
 
-# The goal: every light on. ("one_matrix" in comparison.js.)
 ALL_ON: Grid = tuple(tuple(1 for _ in range(GRID)) for _ in range(GRID))
 ALL_OFF: Grid = tuple(tuple(0 for _ in range(GRID)) for _ in range(GRID))
 
 
 def xor(a: Grid, b: Grid) -> Grid:
-    """Apply one grid of toggles to another."""
     return tuple(tuple(x ^ y for x, y in zip(row_a, row_b))
                  for row_a, row_b in zip(a, b))
 
 
 def difference(before: Grid, after: Grid) -> Grid:
-    """The mask a switch toggles: the lights that changed when it was pressed."""
     return xor(before, after)
 
 
 def apply(state: Grid, masks: list[Grid]) -> Grid:
-    """The board after pressing each of `masks` once."""
     for mask in masks:
         state = xor(state, mask)
     return state
 
 
 def subsets(letters: str) -> list[str]:
-    """Every subset of `letters`, in comparison.js's order.
-
-    Its `letter_cominations` grows a list: for each new letter it prefixes that
-    letter onto every subset built so far, then adds the letter on its own, and
-    finally appends the empty subset. The order is what decides which answer a
-    box with several gets, so it is reproduced exactly rather than tidied into
-    something sorted -- including the empty subset coming last, so a board that
-    is already solved still reports a real set of presses if one exists.
-    """
     combos: list[str] = []
     for letter in letters:
         # Snapshot: the new entries must not themselves be extended this round.
@@ -77,12 +64,6 @@ def subsets(letters: str) -> list[str]:
 
 
 def solutions(state: Grid, switches: dict[str, Grid]) -> list[str]:
-    """Every set of switches that turns the whole board on, best first.
-
-    `state` is the lights that are on now; `switches` maps a letter to the mask
-    that switch toggles. The returned strings carry the letters in the order
-    comparison.js builds them in, which is not alphabetical.
-    """
     order = "".join(letter for letter in LETTERS if letter in switches)
     found = []
     for combo in subsets(order):
@@ -96,8 +77,6 @@ def solutions(state: Grid, switches: dict[str, Grid]) -> list[str]:
 # --------------------------------------------------------------------------- #
 
 def parse_grid(value, where: str) -> Grid:
-    """Read a 5x5 grid of lights. Anything truthy is a light that is on, so the
-    page may send booleans, 0/1, or "1" without converting first."""
     if not isinstance(value, (list, tuple)) or len(value) != GRID:
         raise ValueError("{} must be {} rows of {} lights.".format(where, GRID, GRID))
     rows = []
@@ -109,15 +88,8 @@ def parse_grid(value, where: str) -> Grid:
 
 
 def parse_switches(value) -> dict[str, Grid]:
-    """Read the switch masks.
-
-    Each is either the mask itself, or the pair of readings taken either side of
-    pressing that switch -- {"before": grid, "after": grid} -- which is how the
-    page will send them, since that is what the user actually observed.
-    """
     if not isinstance(value, dict) or not value:
-        raise ValueError("No switches were recorded. Press each switch once and "
-                         "note which lights changed.")
+        raise ValueError("No switches were recorded. Press each switch once and note which lights changed.")
 
     masks: dict[str, Grid] = {}
     for letter, entry in value.items():
@@ -136,12 +108,6 @@ def parse_switches(value) -> dict[str, Grid]:
 
 
 def solve(request: dict) -> dict:
-    """Answer one request from the page.
-
-    Raises ValueError for anything the user can fix; the message is shown to
-    them as written. A box with no answer is not one of those -- it is a real
-    result, and comes back with `solution` set to null.
-    """
     state = parse_grid(request.get("state"), "The lights that are on")
     switches = parse_switches(request.get("switches"))
 
@@ -154,23 +120,17 @@ def solve(request: dict) -> dict:
             "solution": None,
             "solutions": [],
             "unusedSwitches": dead,
-            "message": "No solution found. Check the readings and try again -- "
-                       "a single mis-noted light is enough to make a box look "
-                       "unsolvable.",
+            "message": "No solution found. Check the readings and try again.\n"
+                       "A single mis-noted light is enough to make a box look unsolvable.",
         }
 
     best = found[0]
     return {
         "ok": True,
-        # The letters to press, alphabetical, which is how they are read off
-        # the box. `sequence` keeps the reference implementation's own order.
         "solution": sorted(best),
         "sequence": best,
         "presses": len(best),
-        # Every other set that also works. A box whose switches overlap has
-        # more than one answer, and all of them are equally correct.
         "solutions": [sorted(combo) for combo in found],
         "unusedSwitches": dead,
-        "message": "Press each of these once." if best else
-                   "Every light is already on.",
+        "message": "Press each of these once." if best else "Every light is already on.",
     }

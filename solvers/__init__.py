@@ -28,8 +28,6 @@ _loaded: dict[str, object] = {}
 
 
 def reload() -> None:
-    """Drop every loaded solver, so the next call re-imports it from disk.
-    This is what makes the server's Ctrl+R pick up a solver edit."""
     for module in _loaded.values():
         importlib.reload(module)
     _loaded.clear()
@@ -44,6 +42,4 @@ def get(tool: str):
 
 
 def run(tool: str, request: dict) -> dict:
-    """Answer one request. Raises LookupError for an unknown tool and
-    ValueError for a bad request; server.py turns both into a JSON error."""
     return get(tool).solve(request)
