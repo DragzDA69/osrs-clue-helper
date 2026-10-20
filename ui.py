@@ -106,6 +106,7 @@ def symbol_id(char: str) -> str:
 
 
 APP_ICON = "/images/clue_scroll_(master).png"
+APP_ICON_MOBILE = "/images/app_icon.png"
 TOOLS: list[dict[str, str]] = [
     {
         "id": "light-box",
@@ -117,14 +118,57 @@ TOOLS: list[dict[str, str]] = [
         "id": "puzzle-box",
         "title": "Puzzle Box",
         "icon": "/images/puzzle_box/puzzle_box.png",
-        "blurb": "Solve the sliding tile puzzle, move by move.",
+        "blurb": "Solve the sliding tile puzzle box, move by move.",
     },
+    {
+        "id": "anagram",
+        "title": "Anagram",
+        "icon": "/images/empty_scroll.png",
+        "blurb": "Unscramble letters and phrases to find the correct NPC.",
+    },
+    {
+        "id": "coordinates",
+        "title": "Coordinates",
+        "icon": "/images/coordinates/sextant.png",
+        "blurb": "Find the correct location using the given coordinates.",
+    },
+    {
+        "id": "cryptic-clue",
+        "title": "Cryptic Clue",
+        "icon": "/images/cryptic_clue/cake_of_guidance.png",
+        "blurb": "Solve the cryptic clue to find the correct location.",
+    },
+    {
+        "id": "falo-the-bard",
+        "title": "Falo the Bard",
+        "icon": "/images/falo_the_bard/falo_the_bard.png",
+        "blurb": "Find the correct item to bring to Falo the Bard.",
+    },
+    {
+        "id": "emote-clue",
+        "title": "Emote Clues",
+        "icon": "/images/emote_clue/mime.png",
+        "blurb": "Find location and gear needed for an emote clue.",
+    },
+    {
+        "id": "sherlock",
+        "title": "Sherlock",
+        "icon": "/images/sherlock/sherlock.png",
+        "blurb": "Complete Sherlock challenge scrolls.",
+    },
+    {
+        "id": "hot-cold",
+        "title": "Hot & Cold",
+        "icon": "/images/hot_cold/strange_device.png",
+        "blurb": "Follow the hot and cold clues to find the treasure.",
+    }
 ]
 
 VALUES: dict[str, object] = {
     # -- identity ----------------------------------------------------------
     "app_name": "{} {}".format(BRAND_LEAD, BRAND_TAIL),
     "app_icon": APP_ICON,
+    "app_icon_mobile": APP_ICON_MOBILE,
     "brand_lead": BRAND_LEAD,
     "brand_tail": BRAND_TAIL,
     "developer_credit": "Developed by Dragz",
@@ -180,7 +224,11 @@ VALUES: dict[str, object] = {
     "toast_fade_ms": TOAST_FADE_MS,
 
     # -- data the scripts read ---------------------------------------------
-    "tools_json": json.dumps(TOOLS, separators=(",", ":")),
+    # Substituted into app.js as a bare literal, not inside a quoted string: JSON
+    # is valid JS, whereas an apostrophe or quote in a blurb ("Falo the Bard's")
+    # would end a string early and take the whole page down. "<" is escaped so no
+    # value can close the <script> tag the standalone build inlines app.js into.
+    "tools_json": json.dumps(TOOLS, separators=(",", ":")).replace("<", "\\u003c"),
 }
 
 PLACEHOLDER = re.compile("[{]{2}([a-z0-9_]+)[}]{2}")
