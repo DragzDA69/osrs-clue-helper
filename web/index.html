@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{app_name}}</title>
 <link rel="icon" type="image/png" href="{{app_icon}}">
-<link rel="apple-touch-icon" href="{{app_icon}}">
+<link rel="apple-touch-icon" href="{{app_icon_mobile}}">
 <meta name="apple-mobile-web-app-title" content="{{app_name}}">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="/style.css">
@@ -15,12 +15,13 @@
 <!-- The interface font, as symbols. Every glyph on the page points here. -->
 {{glyph_symbols}}
 
+<!-- The app's own header. It is the same on every page: each tool names itself
+     in the title at the top of its page. -->
 <header class="bar">
   <div class="brand">
     <h1>
-      <!-- Swapped for the tool's own icon and name once a tool page opens. -->
-      <img class="logo" id="brandIcon" src="{{app_icon}}" alt="">
-      <span id="brandName"><span class="lead">{{brand_lead}}</span> <span>{{brand_tail}}</span></span>
+      <img class="logo" src="{{app_icon}}" alt="">
+      <span><span class="lead">{{brand_lead}}</span> <span>{{brand_tail}}</span></span>
     </h1>
     <span class="developer-credit">{{developer_credit}}</span>
   </div>
@@ -44,8 +45,8 @@
     </button>
 
     <label class="switch">
-      <span class="switch-label">{{toggle_mute}}</span>
-      <input type="checkbox" id="mute">
+      <span class="switch-label">{{toggle_sound}}</span>
+      <input type="checkbox" id="sound">
       <span class="track" aria-hidden="true"><span class="knob"></span></span>
     </label>
   </div>

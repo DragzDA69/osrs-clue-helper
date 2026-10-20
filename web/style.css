@@ -112,7 +112,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 24px; }
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  /* The title below carries 14px of its own padding, so 16px in all. */
+  margin-bottom: 2px;
   min-height: 34px;
 }
 .pagebar .switch { margin-left: auto; }
@@ -137,22 +138,35 @@ main { max-width: 1100px; margin: 0 auto; padding: 24px; }
 .backbtn:hover { color: var(--ink); background: var(--panel-2); }
 .backbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* Titles are centred on every page, tool and home alike. */
+/* Titles are centred on every page, tool and home alike. The padding gives a
+   title room to sit off the window's edge when it is pinned (below); the gaps
+   it replaces (16px above, 6px below) are taken out of the neighbours, so the
+   spacing is the same whether or not a page pins its title. */
 .pagetitle {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 11px;
   margin: 0;
+  padding: 14px 0 6px;
   text-align: center;
   font-size: 22px;
   font-weight: 650;
   letter-spacing: -0.01em;
 }
+/* A tool's title stays pinned to the top of the window when a long page scrolls
+   under it. The opaque background is what the page scrolls behind. The home
+   screen's title is left to scroll away with its page. */
+#page-tool .pagetitle {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+}
 /* The tool page repeats the card's icon beside its name, at the same scale
    the card shows it, so the two read as the same object. */
 .pagetitle .toolicon { width: 34px; height: 34px; flex: none; object-fit: contain; }
-.pagehint { margin-top: 6px; text-align: center; }
+.pagehint { margin-top: 0; text-align: center; }   /* the title's padding is its gap */
 
 /* --- the sound switch ----------------------------------------------------
    A real checkbox, hidden but still the thing that is clicked, focused and
@@ -633,6 +647,17 @@ button.secondary-btn {
   --btn-px: 0.3127cqw;
   width: 21.167cqw;
   height: 9.693cqw;
+}
+
+/* What to do first, above the board. It is emptied once that step is done but
+   keeps its height, so the board and the buttons below do not jump upward
+   just as a finger is lifting off Set Start. */
+.startprompt {
+  margin: 14px 2px 10px;
+  min-height: 21px;
+  font-size: 14px;
+  color: var(--ink-dim);
+  text-align: center;
 }
 
 /* The row of actions under a tool. */

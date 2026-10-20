@@ -10,6 +10,11 @@
  * It is a port of the same comparison.js the Python is a port of, and it
  * answers in the same shape, so the page cannot tell which side replied.
  * Keep the two in step: a change to one is a change to both.
+ *
+ * The request: `switches[X].before` is the board before lever X, and for A that
+ * is the starting combination the player entered; every later `before` is the
+ * previous lever's `after`. `state` is the board after H. The start is never
+ * sent on its own -- it is already inside A's mask.
  */
 
 (function () {

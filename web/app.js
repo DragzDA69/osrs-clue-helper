@@ -16,7 +16,7 @@
 
 const $ = (id) => document.getElementById(id);
 
-const TOOLS = JSON.parse('{{tools_json}}');
+const TOOLS = {{tools_json}};
 const TOAST_MS = +"{{toast_ms}}", TOAST_FADE_MS = +"{{toast_fade_ms}}";
 const APP_NAME = "{{app_name}}";
 const byId = new Map(TOOLS.map((tool) => [tool.id, tool]));
@@ -95,9 +95,8 @@ function openHome() {
   $("page-tool").replaceChildren();
   $("page-home").hidden = false;
   $("back").hidden = true;
-  setBrand(null);
+  setTabTitle(null);
   flash("");
-  syncBrandLayout();
 }
 
 function openTool(id) {
@@ -112,9 +111,8 @@ function openTool(id) {
   const page = $("page-tool");
   page.hidden = false;
   page.replaceChildren(toolHeading(tool), toolBody(tool));
-  setBrand(tool);
+  setTabTitle(tool);
   flash("");
-  syncBrandLayout();
 
   const impl = implementations.get(id);
   if (impl && typeof impl.mount === "function") {
@@ -155,29 +153,10 @@ function toolBody(tool) {
   return body;
 }
 
-function setBrand(tool) {
-  const icon = $("brandIcon");
-  const name = $("brandName");
-  if (tool) {
-    icon.src = tool.icon;
-    name.textContent = tool.title;
-    $("appInfo").hidden = true;
-    document.title = tool.title + " · " + APP_NAME;
-  } else {
-    icon.src = HOME_ICON;
-    name.replaceChildren(span("lead", "{{brand_lead}}"),
-                         document.createTextNode(" "),
-                         span("", "{{brand_tail}}"));
-    $("appInfo").hidden = false;
-    document.title = APP_NAME;
-  }
-}
-
-function span(cls, text) {
-  const el = document.createElement("span");
-  if (cls) el.className = cls;
-  el.textContent = text;
-  return el;
+/* The header at the top is the app's and reads the same on every page; a tool
+   names itself in its own title below it. Only the browser tab follows the page. */
+function setTabTitle(tool) {
+  document.title = tool ? tool.title + " · " + APP_NAME : APP_NAME;
 }
 
 // --- status line ----------------------------------------------------------
@@ -294,16 +273,19 @@ window.confirmAction = confirmAction;
 
 // --- sound ----------------------------------------------------------------
 
-const MUTE_KEY = "clue-helper.mute";
-let muted = false;
+/* Sounds are off until the switch is turned on, and the choice is remembered.
+   The key is new on purpose: the one it replaced (clue-helper.mute) stored the
+   opposite meaning, so reading it back would flip anyone's saved choice. */
+const SOUND_KEY = "clue-helper.sound";
+let soundOn = false;
 try {
-  muted = localStorage.getItem(MUTE_KEY) === "1";
+  soundOn = localStorage.getItem(SOUND_KEY) === "1";
 } catch {}
 
 const sounds = new Map();
 
 function playSound(url) {
-  if (muted) return;
+  if (!soundOn) return;
   let source = sounds.get(url);
   if (!source) {
     source = new Audio(url);
@@ -317,10 +299,10 @@ function playSound(url) {
 }
 window.playSound = playSound;
 
-$("mute").addEventListener("change", (event) => {
-  muted = event.target.checked;
+$("sound").addEventListener("change", (event) => {
+  soundOn = event.target.checked;
   try {
-    localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
+    localStorage.setItem(SOUND_KEY, soundOn ? "1" : "0");
   } catch {}
 });
 
@@ -402,15 +384,9 @@ window.solve = solve;
 
 // --- startup --------------------------------------------------------------
 
-const HOME_ICON = $("brandIcon").src;
-
 function syncBrandLayout() {
   const bar = document.querySelector(".bar");
   const info = $("appInfo");
-  if (info.hidden) {       // a tool page shows only the name: never compact
-    bar.classList.remove("compact");
-    return;
-  }
   const style = getComputedStyle(bar);
   const available = bar.clientWidth - parseFloat(style.paddingLeft)
     - parseFloat(style.paddingRight);
@@ -431,7 +407,7 @@ window.addEventListener("hashchange", render);
 (function init() {
   // The switch starts where the remembered choice left it, not where the
   // markup does.
-  $("mute").checked = muted;
+  $("sound").checked = soundOn;
   buildMenu();
   render();
   let headerWidth = null;

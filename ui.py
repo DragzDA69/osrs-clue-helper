@@ -106,6 +106,7 @@ def symbol_id(char: str) -> str:
 
 
 APP_ICON = "/images/clue_scroll_(master).png"
+APP_ICON_MOBILE = "/images/app_icon.png"
 TOOLS: list[dict[str, str]] = [
     {
         "id": "light-box",
@@ -117,14 +118,57 @@ TOOLS: list[dict[str, str]] = [
         "id": "puzzle-box",
         "title": "Puzzle Box",
         "icon": "/images/puzzle_box/puzzle_box.png",
-        "blurb": "Solve the sliding tile puzzle, move by move.",
+        "blurb": "Solve the sliding tile puzzle box, move by move.",
     },
+    {
+        "id": "anagram",
+        "title": "Anagram",
+        "icon": "/images/empty_scroll.png",
+        "blurb": "Unscramble letters and phrases to find the correct NPC.",
+    },
+    {
+        "id": "coordinates",
+        "title": "Coordinates",
+        "icon": "/images/coordinates/sextant.png",
+        "blurb": "Find the correct location using the given coordinates.",
+    },
+    {
+        "id": "cryptic-clue",
+        "title": "Cryptic Clue",
+        "icon": "/images/cryptic_clue/cake_of_guidance.png",
+        "blurb": "Solve the cryptic clue to find the correct location.",
+    },
+    {
+        "id": "falo-the-bard",
+        "title": "Falo the Bard",
+        "icon": "/images/falo_the_bard/falo_the_bard.png",
+        "blurb": "Find the correct item to bring to Falo the Bard.",
+    },
+    {
+        "id": "emote-clue",
+        "title": "Emote Clues",
+        "icon": "/images/emote_clue/mime.png",
+        "blurb": "Find location and gear needed for an emote clue.",
+    },
+    {
+        "id": "sherlock",
+        "title": "Sherlock",
+        "icon": "/images/sherlock/sherlock.png",
+        "blurb": "Complete Sherlock challenge scrolls.",
+    },
+    {
+        "id": "hot-cold",
+        "title": "Hot & Cold",
+        "icon": "/images/hot_cold/strange_device.png",
+        "blurb": "Follow the hot and cold clues to find the treasure.",
+    }
 ]
 
 VALUES: dict[str, object] = {
     # -- identity ----------------------------------------------------------
     "app_name": "{} {}".format(BRAND_LEAD, BRAND_TAIL),
     "app_icon": APP_ICON,
+    "app_icon_mobile": APP_ICON_MOBILE,
     "brand_lead": BRAND_LEAD,
     "brand_tail": BRAND_TAIL,
     "developer_credit": "Developed by Dragz",
@@ -136,25 +180,21 @@ VALUES: dict[str, object] = {
     "home_hint": "Choose the clue step you are stuck on.",
     "btn_back": "All tools",
     "title_back": "Back to all tools",
-    "toggle_mute": "Disable Sounds",
+    "toggle_sound": "Enable Sounds",
 
     # -- tool pages --------------------------------------------------------
     "tool_placeholder_heading": "Nothing here yet",
-    "tool_placeholder_body":
-        "This tool is still being built. The page, the route and the layout "
-        "are in place, so the solver can drop straight in.",
+    "tool_placeholder_body": "This tool is still being built. The page, the route and the layout are in place, so the solver can drop straight in.",
     "msg_unknown_tool": "That tool does not exist.",
 
     # -- light box ---------------------------------------------------------
-    "lb_prompt": "Work through the levers in order. Press one in the game, then "
-                 "tap every light that is lit afterwards.",
-    "lb_step_start": "Select lever A to begin.",
+    "lb_prompt": "Use this step by step interactive light box to mimic lights and levers in game to find the final solution.",
+    "lb_enter_start": "Enter your starting combination",
     "lb_step": "Lever {label}: tap every light that is on after pressing it.",
     "lb_step_count": "{n} lit",
     "lb_ready": "All eight levers recorded. Press Solve.",
     "lb_few_title": "Only {n} lit for lever {label}?",
-    "lb_few_message": "A lever usually changes more lights than that, so this "
-                      "often means a light was missed.",
+    "lb_few_message": "A lever usually changes more lights than that, so this often means a light was missed.",
     "lb_few_note": "Moving on locks lever {label} in as it stands.",
     "btn_continue": "Continue anyway",
     "lb_solving": "Solving…",
@@ -163,6 +203,7 @@ VALUES: dict[str, object] = {
     "lb_light_label": "Light, row {r}, column {c}",
     "lb_lever_label": "Lever {label}",
     "btn_reset": "Reset",
+    "btn_set_start": "Set Start",
     "btn_solve": "Solve",
 
     # -- confirming something that throws work away ------------------------
@@ -183,7 +224,11 @@ VALUES: dict[str, object] = {
     "toast_fade_ms": TOAST_FADE_MS,
 
     # -- data the scripts read ---------------------------------------------
-    "tools_json": json.dumps(TOOLS, separators=(",", ":")),
+    # Substituted into app.js as a bare literal, not inside a quoted string: JSON
+    # is valid JS, whereas an apostrophe or quote in a blurb ("Falo the Bard's")
+    # would end a string early and take the whole page down. "<" is escaped so no
+    # value can close the <script> tag the standalone build inlines app.js into.
+    "tools_json": json.dumps(TOOLS, separators=(",", ":")).replace("<", "\\u003c"),
 }
 
 PLACEHOLDER = re.compile("[{]{2}([a-z0-9_]+)[}]{2}")

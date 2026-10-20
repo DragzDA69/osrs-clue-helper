@@ -35,15 +35,21 @@ Open it on a desktop beside the game, or on your phone while you play.
 | Tool | |
 | :-- | :-- |
 | **[Light Box](#light-box)** | The 5×5 lights-and-levers puzzle on master clues |
-| **Puzzle Box** | _Not built yet_ |
+| **[Puzzle Box](#puzzle-box)** | Solve the sliding tile puzzle box, move by move. _Not built yet_ |
+| **[Anagram](#anagram)** | Unscramble letters and phrases to find the correct NPC. _Not built yet_ |
+| **[Coordinates](#coordinates)** | Find the correct location using the given coordinates. _Not built yet_ |
+| **[Cryptic Clue](#cryptic-clue)** | Solve the cryptic clue to find the correct location. _Not built yet_ |
+| **[Falo the Bard](#falo-the-bard)** | Find the correct item to bring to Falo the Bard. _Not built yet_ |
+| **[Emote Clues](#emote-clues)** | Find the location and gear needed for an emote clue. _Not built yet_ |
+| **[Sherlock](#sherlock)** | Complete Sherlock challenge scrolls. _Not built yet_ |
+| **[Hot & Cold](#hot--cold)** | Follow the hot and cold clues to find the treasure. _Not built yet_ |
 | _More to come_ | _Other clue steps will be added here_ |
 
 ---
 
 ### Light Box
 
-<img src="screenshots/light-box.png" alt="The Light Box tool, with its answer" width="500">
-<img src="screenshots/mobile.png" alt="The same tool on a phone" width="280">
+<img src="screenshots/light-box.png" alt="The Light Box tool, with its answer" width="400">
 
 A light box is a 5×5 grid of lights and eight levers, **A** to **H**, and the goal is to turn every light on. 
 The lights a lever changes is different in every box; the helper watches yours and works the answer out from what it sees.
@@ -51,12 +57,13 @@ The lights a lever changes is different in every box; the helper watches yours a
 #### How to use it
 
 1. Open the light box in game, and open this tool beside it.
-2. Select **lever A** here, then pull lever A in the game.
-3. Tap the lights on the helper's box so they match the lights that are lit in the game.
-4. Select **lever B** and do the same. The board clears each time — you are
+2. Before pulling anything, tap the lights on the helper's box so they match the lights lit in the game, then press **Set Start**. Lever A is selected for you.
+3. Pull lever A in the game.
+4. Tap the lights on the helper's box so they match the lights that are lit in the game.
+5. Select **lever B** and do the same. The board clears each time — you are
 recording how the box looks after each lever, not editing the last one.
-5. Work through to **lever H** in order. Levers unlock one at a time, so there no way to lose your place.
-6. Press **Solve**.
+6. Work through to **lever H** in order. Levers unlock one at a time, so there no way to lose your place.
+7. Press **Solve**.
 
 The answer comes back as a row of levers, as in the picture above. 
 Pull each one once in the game, and tap it here to keep your place.
@@ -67,13 +74,62 @@ Pull each one once in the game, and tap it here to keep your place.
 One mis-noted light is enough to make a solvable box look unsolvable.
 - Move on with very few lights lit and the helper asks whether you are sure —
   that usually means a light was missed.
-- **Reset** clears the board and starts the box over.
+- **Set Start** takes the board exactly as you entered it, and there is no going back from it.
+- **Reset** clears the board and starts the box over — including the starting combination.
+
+---
+
+### Puzzle Box
+
+_Not built yet._ Solve the sliding tile puzzle box, move by move.
+
+---
+
+### Anagram
+
+_Not built yet._ Unscramble letters and phrases to find the correct NPC.
+
+---
+
+### Coordinates
+
+_Not built yet._ Find the correct location using the given coordinates.
+
+---
+
+### Cryptic Clue
+
+_Not built yet._ Solve the cryptic clue to find the correct location.
+
+---
+
+### Falo the Bard
+
+_Not built yet._ Find the correct item to bring to Falo the Bard.
+
+---
+
+### Emote Clues
+
+_Not built yet._ Find the location and gear needed for an emote clue.
+
+---
+
+### Sherlock
+
+_Not built yet._ Complete Sherlock challenge scrolls.
+
+---
+
+### Hot & Cold
+
+_Not built yet._ Follow the hot and cold clues to find the treasure.
 
 ---
 
 ### Everywhere else
 
-Sound effects can be turned off with the switch at the top right of any page, and the setting is remembered.
+Sound effects are off by default. Turn them on with the **Enable Sounds** switch at the top right of any page, and the setting is remembered.
 
 On a phone, Safari's **Share → Add to Home Screen** gives it an icon that opens fullscreen, and it keeps working with no signal.
 

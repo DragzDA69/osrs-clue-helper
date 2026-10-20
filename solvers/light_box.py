@@ -14,6 +14,13 @@ asks: note the lights, press a switch, note them again. The lights that changed
 are exactly the ones that switch toggles. XOR of the two readings gives its
 mask, and `difference` does that here.
 
+The first reading is the board before any switch is pulled -- the box's
+starting combination, which the player enters and which need not be dark. It
+is the `before` of switch A, and each later switch's `before` is the previous
+switch's `after`. The request's `state` is the board after H: the one the
+answer is worked out from. The starting combination itself is never sent on its
+own; it is already inside A's mask.
+
 Why the answer is a set and not a sequence
 ------------------------------------------
 Toggling is its own inverse and order does not matter, so pressing a switch
